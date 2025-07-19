@@ -1,4 +1,5 @@
-def load_hdl_file() -> tuple:
+import os
+def _load_hdl_file() -> tuple:
     full_file_name = input('Enter file name: ').strip()
 
     if not full_file_name.endswith('.hdl'):
@@ -16,7 +17,7 @@ def load_hdl_file() -> tuple:
     return chip_name, lines
 
 
-def get_rid_of_comments(raw_lines: list) -> list:
+def _get_rid_of_comments(raw_lines: list) -> list:
     lines = []
     inside_block_comment = False
 
@@ -51,7 +52,7 @@ def get_rid_of_comments(raw_lines: list) -> list:
     return lines
 
 
-def tokenize(name: str, lines: list) -> tuple[list[str], list[str], list[str]]:
+def _tokenize(name: str, lines: list) -> tuple[list[str], list[str], list[str]]:
     if not lines or not lines[0].startswith("CHIP") or not lines[0].endswith('{'):
         raise SyntaxError("HDL file must start with 'CHIP ChipName {'")
 
@@ -82,5 +83,28 @@ def tokenize(name: str, lines: list) -> tuple[list[str], list[str], list[str]]:
     outs = [pin.strip() for pin in out_section_str[:-1].split(',')]
 
     parts = [part.strip() + ';' for part in parts_section_str.split(';') if part.strip()]
+
+    return ins, outs, parts
+
+def _checkExistenceOfChips(directory_name: str, built_in_chips: list[str], parts: list[str]) -> bool:
+    for part in parts:
+        chip_name = part.split('(')[0].strip() + ".hdl"
+        if chip_name in built_in_chips:
+            continue
+        full_path = os.path.join(directory_name, chip_name)
+        if not os.path.isfile(full_path):
+            raise ValueError(f"{chip_name} not found in directory '{directory_name}'")
+    return True
+
+def tokenize_hdl():
+    chip_name, lines = _load_hdl_file()
+    lines = _get_rid_of_comments(lines)
+    ins, outs, parts = _tokenize(chip_name, lines)
+
+    built_in_chips = ["Not.hdl", "And.hdl", "Or.hdl", "Xor.hdl", "Mux.hdl", "DMux.hdl"]  # example list
+    directory = "."
+
+    if not _checkExistenceOfChips(directory, built_in_chips, parts):
+        raise ValueError("Some chips used in PARTS are missing in the directory or built-ins.")
 
     return ins, outs, parts

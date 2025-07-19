@@ -1,7 +1,7 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from hdl_tokenizer import get_rid_of_comments, tokenize
+from tokenizer.hdl_tokenizer import get_rid_of_comments, tokenize
 
 def load_hdl_file_direct(file_path: str) -> tuple:
     """Load HDL file directly without user input"""
