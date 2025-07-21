@@ -5,13 +5,13 @@ This is a Python-based HDL (Hardware Description Language) **emulator and test r
 ---
 
 ## 📁 Project Structure
-├── data /  # Contains .hdl chip definitions and .cmp/.csv test files
+├── data -> Contains .hdl chip definitions and .cmp/.csv test files
 
-├── hdl_parser.py # Main HDL parsing and chip emulation logic
+├── hdl_parser.py -> Main HDL parsing and chip emulation logic
 
-├── tester.py # Testing logic for .cmp and .csv test files
+├── tester.py -> Testing logic for .cmp and .csv test files
 
-├── hdl_compiler.py # Command-line interface for running tests
+├── hdl_compiler.py -> Command-line interface for running tests
 
 
 
