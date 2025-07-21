@@ -1,4 +1,3 @@
-import os
 
 from models.chip import Chip
 from models.chip_parameters import ChipParameters

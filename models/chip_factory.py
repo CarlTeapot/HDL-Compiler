@@ -1,6 +1,6 @@
 from models.chip_parameters import ChipParameters
-from models.built_in_chips import *
-
+from models.built_in_chips import NandGate, OrGate, AndGate, NotGate
+from models.chip import Chip
 
 class ChipFactory:
     def __init__(self, name: str, inputs: dict[str, bool], chips: dict[str, 'ChipParameters']):

@@ -115,7 +115,7 @@ def _tokenize_hdl(file_name: str, chips: dict[str, 'ChipParameters'], directory_
     for part in parts:
         sub_chip_name = part.split('(')[0].strip()
         if sub_chip_name not in chips:
-            sub_file = os.path.join(directory_name, sub_chip_name + ".hdl")
+            os.path.join(directory_name, sub_chip_name + ".hdl")
             sub_ins, sub_outs, sub_parts_strs = _tokenize_hdl(sub_chip_name + ".hdl", chips, directory_name)
             sub_parts = parse_parts(sub_parts_strs)
             chips[sub_chip_name] = ChipParameters(inputs=sub_ins, outputs=sub_outs, parts=sub_parts)
