@@ -40,6 +40,6 @@ Example code:
     
     python hdl_compiler.py --file {file-path.cmp/csv}
 
- To test the hdl file, all the other .hdl files for the chips that it uses must be in the same folder
+ To test the hdl file, all the other .hdl files that it uses as chips must be in the same folder
  
 
