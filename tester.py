@@ -2,6 +2,17 @@ from hdl_parser import HDLParser
 
 import os
 
+def run_all_cmp_tests(hdl_parser: HDLParser):
+    data_dir = "data"
+    test_files = [f for f in os.listdir(data_dir) if f.endswith(".cmp")]
+
+    if not test_files:
+        print("⚠️ No .cmp files found in the data directory.")
+        return
+
+    for test_file in test_files:
+        print(f"\n🔍 Running test: {test_file}")
+        run_test_from_file(test_file, hdl_parser)
 
 def run_test_from_file(filename: str, hdl_parser) -> None:
     filepath = os.path.join("data", filename)
