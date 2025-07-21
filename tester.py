@@ -1,25 +1,27 @@
 from hdl_parser import HDLParser
-
 import os
 
-def run_all_cmp_tests(hdl_parser: HDLParser):
-    data_dir = "data"
-    test_files = [f for f in os.listdir(data_dir) if f.endswith(".cmp")]
+
+def run_all_tests(hdl_parser: HDLParser, directory_path: str):
+    test_files = [f for f in os.listdir(directory_path) if f.endswith(".cmp") or f.endswith(".csv")]
 
     if not test_files:
-        print("⚠️ No .cmp files found in the data directory.")
+        print("⚠️ No .cmp or .csv files found in the data directory.")
         return
 
     for test_file in test_files:
+        file_path = os.path.join(directory_path, test_file)
         print(f"\n🔍 Running test: {test_file}")
-        run_test_from_file(test_file, hdl_parser)
+        run_test_from_file(file_path, hdl_parser)
 
-def run_test_from_file(filename: str, hdl_parser) -> None:
-    filepath = os.path.join("data", filename)
+
+def run_test_from_file(filepath: str, hdl_parser) -> None:
     with open(filepath, "r") as f:
         lines = [line.strip() for line in f if line.strip()]
 
+    filename = os.path.basename(filepath)
     chip_name = os.path.splitext(filename)[0]
+
     if filename.endswith(".csv") or ";" in lines[0]:
         _run_csv_test(chip_name, lines, hdl_parser)
     elif "|" in lines[0]:
@@ -38,51 +40,55 @@ def _run_csv_test(chip_name: str, csv_lines: list[str], hdl_parser: HDLParser) -
         if not line.strip():
             continue
 
-        input_part, output_part = line.strip().split(";")
-        input_values = [bool(int(x)) for x in input_part.strip().split(",")]
-        output_values = [bool(int(x)) for x in output_part.strip().split(",")]
+        try:
+            input_part, output_part = line.strip().split(";")
+            input_values = [bool(int(x)) for x in input_part.strip().split(",")]
+            output_values = [bool(int(x)) for x in output_part.strip().split(",")]
 
-        input_dict = dict(zip(input_names, input_values))
-        expected_output_dict = dict(zip(output_names, output_values))
+            input_dict = dict(zip(input_names, input_values))
+            raw_expected_output = dict(zip(output_names, output_values))
 
-        chip = hdl_parser.create_chip(chip_name, input_dict)
-        chip.evaluate()
+            chip = hdl_parser.create_chip(chip_name, input_dict)
+            chip.evaluate()
 
-        if chip.outputs != expected_output_dict:
-            print(f"❌ Test failed on line {i}:")
-            print(f"   Inputs: {input_dict}")
-            print(f"   Expected: {expected_output_dict}")
-            print(f"   Got:      {chip.outputs}")
-        else:
-            print(f"✅ Test passed on line {i}")
+            expected_output_dict = {
+                k: v for k, v in raw_expected_output.items()
+                if k in chip.outputs
+            }
+
+            if chip.outputs != expected_output_dict:
+                print(f"❌ Test failed on line {i}:")
+                print(f"   Inputs:   {input_dict}")
+                print(f"   Expected: {expected_output_dict}")
+                print(f"   Got:      {chip.outputs}")
+            else:
+                print(f"✅ Test passed on line {i}")
+        except Exception as e:
+            print(f"❌ Error parsing line {i}: {line}")
+            print(f"   Error: {e}")
 
 
 def _run_cmp_test(chip_name: str, table_lines: list[str], hdl_parser: HDLParser) -> None:
     headers = [col.strip() for col in table_lines[0].strip("|").split("|")]
     data_lines = table_lines[1:]
 
-    input_names = [name for name in headers if name != "out"]
-    output_names = ["out"]
-
     for i, line in enumerate(data_lines, start=1):
         if not line.strip():
-            continue  # Skip empty lines
+            continue
 
         columns = [col.strip() for col in line.strip("|").split("|")]
-        values = [bool(int(v)) for v in columns]
+        input_values = [bool(int(v)) for v in columns]
 
-        input_values = values[:-1]
-        output_values = values[-1:]
+        variable_dict = dict(zip(headers, input_values))
 
-        input_dict = dict(zip(input_names, input_values))
-        expected_output_dict = dict(zip(output_names, output_values))
-
-        chip = hdl_parser.create_chip(chip_name, input_dict)
+        chip = hdl_parser.create_chip(chip_name, variable_dict)
         chip.evaluate()
+
+        expected_output_dict = {k: v for k, v in variable_dict.items() if k in chip.outputs.keys()}
 
         if chip.outputs != expected_output_dict:
             print(f"❌ Test failed on line {i}:")
-            print(f"   Inputs: {input_dict}")
+            print(f"   Inputs: {chip.name}")
             print(f"   Expected: {expected_output_dict}")
             print(f"   Got:      {chip.outputs}")
         else:

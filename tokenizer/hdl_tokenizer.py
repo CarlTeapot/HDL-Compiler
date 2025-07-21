@@ -103,21 +103,20 @@ def _checkExistenceOfChips(directory_name: str, parts: list[str], chips: dict[st
     return True
 
 
-def _tokenize_hdl(file_name: str, chips: dict[str, 'ChipParameters']):
+def _tokenize_hdl(file_name: str, chips: dict[str, 'ChipParameters'], directory_name: str):
     chip_name, lines = _load_hdl_file(file_name)
     lines = _get_rid_of_comments(lines)
     ins, outs, parts = _tokenize(chip_name, lines)
 
-    directory = "data"
 
-    if not _checkExistenceOfChips(directory, parts, chips):
+    if not _checkExistenceOfChips(directory_name, parts, chips):
         raise ValueError("Some chips used in PARTS are missing in the directory or built-ins.")
 
     for part in parts:
         sub_chip_name = part.split('(')[0].strip()
         if sub_chip_name not in chips:
-            sub_file = os.path.join(directory, sub_chip_name + ".hdl")
-            sub_ins, sub_outs, sub_parts_strs = _tokenize_hdl(sub_chip_name + ".hdl", chips)
+            sub_file = os.path.join(directory_name, sub_chip_name + ".hdl")
+            sub_ins, sub_outs, sub_parts_strs = _tokenize_hdl(sub_chip_name + ".hdl", chips, directory_name)
             sub_parts = parse_parts(sub_parts_strs)
             chips[sub_chip_name] = ChipParameters(inputs=sub_ins, outputs=sub_outs, parts=sub_parts)
     return ins, outs, parts
@@ -141,10 +140,14 @@ def parse_parts(parts: list[str]) -> list['Part']:
     return result
 
 
-def create_chip(chip_name: str, inputs: dict[str, bool], chips: dict[str, 'ChipParameters']) -> Chip:
+def create_chip(chip_name: str, variables: dict[str, bool], chips: dict[str, 'ChipParameters'], directory_name: str) -> Chip:
     if chip_name not in chips.keys():
-        ins, outs, parts_strs = _tokenize_hdl(chip_name + ".hdl", chips)
+        ins, outs, parts_strs = _tokenize_hdl(chip_name + ".hdl", chips, directory_name)
         parts = parse_parts(parts_strs)
         chips[chip_name] = ChipParameters(inputs=ins, outputs=outs, parts=parts)
+
+    chip_params = chips[chip_name]
+
+    inputs = {k: v for k, v in variables.items() if k in chip_params.inputs}
 
     return Chip(name=chip_name, inputs=inputs, chips=chips)

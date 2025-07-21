@@ -7,7 +7,8 @@ from tokenizer.hdl_tokenizer import create_chip
 
 class HDLParser:
 
-    def __init__(self):
+    def __init__(self, directory_name: str):
+        self.directory_name = directory_name
         self.chips: dict[str, ChipParameters] = {
             "Nand": ChipParameters(
                 inputs=["a", "b"],
@@ -31,5 +32,5 @@ class HDLParser:
             ),
         }
 
-    def create_chip(self, chip_name: str, inputs: dict[str, bool]) -> Chip:
-        return create_chip(chip_name, inputs, self.chips)
+    def create_chip(self, chip_name: str, variables: dict[str, bool]) -> Chip:
+        return create_chip(chip_name, variables, self.chips, self.directory_name)
