@@ -19,6 +19,8 @@ class Chip:
         self.intermediaryBits = {}
 
     def evaluate(self) -> str:
+        from models.chip_factory import ChipFactory
+
         for part in self.parts:
             chip_params = self.chips[part.name]
 
@@ -30,7 +32,8 @@ class Chip:
                 else:
                     sub_inputs[pin] = self.intermediaryBits.get(wire, False)
 
-            sub_chip = Chip(part.name, sub_inputs, self.chips)
+            chip_factory = ChipFactory(part.name, sub_inputs, self.chips)
+            sub_chip = chip_factory.create()
             sub_chip.evaluate()
 
             for pin, value in sub_chip.outputs.items():
