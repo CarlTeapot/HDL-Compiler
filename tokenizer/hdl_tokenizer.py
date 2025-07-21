@@ -1,18 +1,24 @@
-import os
-def _load_hdl_file() -> tuple:
-    full_file_name = input('Enter file name: ').strip()
+from models.chip import Chip
+from models.chip_parameters import ChipParameters
+from models.part import Part
 
+import os
+
+
+def _load_hdl_file(full_file_name: str) -> tuple:
     if not full_file_name.endswith('.hdl'):
         raise ValueError("File name must end with .hdl")
 
     chip_name = full_file_name[:-4]
     print(f"Chip name detected: {chip_name}")
 
+    filepath = os.path.join("data", full_file_name)
+
     try:
-        with open(full_file_name, 'r') as f:
+        with open(filepath, 'r') as f:
             lines = f.readlines()
     except FileNotFoundError:
-        raise FileNotFoundError(f"File '{full_file_name}' not found.")
+        raise FileNotFoundError(f"File '{filepath}' not found.")
 
     return chip_name, lines
 
@@ -72,8 +78,8 @@ def _tokenize(name: str, lines: list) -> tuple[list[str], list[str], list[str]]:
     except ValueError:
         raise SyntaxError("A valid HDL file must contain IN, OUT, and PARTS sections.")
 
-    in_section_str = content[in_start_idx + 2 : out_start_idx].strip()
-    out_section_str = content[out_start_idx + 3 : parts_start_idx].strip()
+    in_section_str = content[in_start_idx + 2: out_start_idx].strip()
+    out_section_str = content[out_start_idx + 3: parts_start_idx].strip()
     parts_section_str = content[parts_start_idx + len("PARTS:"):].strip()
 
     if not in_section_str.endswith(';') or not out_section_str.endswith(';'):
@@ -86,25 +92,52 @@ def _tokenize(name: str, lines: list) -> tuple[list[str], list[str], list[str]]:
 
     return ins, outs, parts
 
-def _checkExistenceOfChips(directory_name: str, built_in_chips: list[str], parts: list[str]) -> bool:
+
+def _checkExistenceOfChips(directory_name: str, parts: list[str], chips: dict[str, 'ChipParameters']) -> bool:
     for part in parts:
-        chip_name = part.split('(')[0].strip() + ".hdl"
-        if chip_name in built_in_chips:
-            continue
-        full_path = os.path.join(directory_name, chip_name)
-        if not os.path.isfile(full_path):
-            raise ValueError(f"{chip_name} not found in directory '{directory_name}'")
+        chip_name = part.split('(')[0].strip()
+        chip_file_name = chip_name + ".hdl"
+        full_path = os.path.join(directory_name, chip_file_name)
+        if chip_name not in chips and not os.path.exists(full_path):
+            raise ValueError(f"{chip_file_name} not found in directory '{directory_name}'")
     return True
 
-def tokenize_hdl():
-    chip_name, lines = _load_hdl_file()
+
+def _tokenize_hdl(file_name: str, chips: dict[str, 'ChipParameters']):
+    chip_name, lines = _load_hdl_file(file_name)
     lines = _get_rid_of_comments(lines)
     ins, outs, parts = _tokenize(chip_name, lines)
 
-    built_in_chips = ["Not.hdl", "And.hdl", "Or.hdl", "Xor.hdl", "Mux.hdl", "DMux.hdl"]  # example list
     directory = "."
 
-    if not _checkExistenceOfChips(directory, built_in_chips, parts):
+    if not _checkExistenceOfChips(directory, parts, chips):
         raise ValueError("Some chips used in PARTS are missing in the directory or built-ins.")
 
     return ins, outs, parts
+
+
+def parse_parts(parts: list[str]) -> list['Part']:
+    result = []
+    for part in parts:
+        name = part.split('(')[0].strip()
+        conn_str = part.split('(')[1].split(')')[0]
+
+        assignments = conn_str.split(',')
+        connections = {}
+        for assignment in assignments:
+            if '=' in assignment:
+                pin, wire = assignment.strip().split('=')
+                connections[pin.strip()] = wire.strip()
+
+        result.append(Part(name=name, connections=connections))
+
+    return result
+
+
+def create_chip(chip_name: str, inputs: dict[str, bool], chips: dict[str, 'ChipParameters']) -> Chip:
+    if chip_name not in chips.keys():
+        ins, outs, parts_strs = _tokenize_hdl(chip_name + ".hdl", chips)
+        parts = parse_parts(parts_strs)
+        chips[chip_name] = ChipParameters(inputs=ins, outputs=outs, parts=parts)
+
+    return Chip(name=chip_name, inputs=inputs, chips=chips)

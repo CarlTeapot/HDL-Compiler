@@ -1,25 +1,38 @@
+from models.chip import Chip
 
 
-def _nand_gate(a: bool, b: bool) -> bool:
-    return not (a and b)
+class NandGate(Chip):
+    def __init__(self, inputs: dict[str, bool]):
+        super().__init__("NAND", inputs, chips={})
+        self.outputs = {"out": False}
 
-def _not_gate(a: bool) -> bool:
-    return not a
+    def evaluate(self) -> str:
+        self.outputs["out"] = not (self.inputs["a"] and self.inputs["b"])
+        return str(self.outputs)
 
-def _or_gate(a: bool, b: bool) -> bool:
-    return a or b
+class NotGate(Chip):
+    def __init__(self, inputs: dict[str, bool]):
+        super().__init__("NOT", inputs, chips={})
+        self.outputs = {"out": False}
 
-def _and_gate(a: bool, b: bool) -> bool:
-    return a and b
+    def evaluate(self) -> str:
+        self.outputs["out"] = not self.inputs["in"]
+        return str(self.outputs)
 
-def built_in_chip(chip_name: str, a: bool, b: bool) -> bool :
-    if chip_name == 'nand':
-        return _nand_gate(a,b)
-    elif chip_name == 'not':
-        return _not_gate(a)
-    elif chip_name == 'or':
-        return _or_gate(a,b)
-    elif chip_name == 'and':
-        return _and_gate(a,b)
+class OrGate(Chip):
+    def __init__(self, inputs: dict[str, bool]):
+        super().__init__("OR", inputs, chips={})
+        self.outputs = {"out": False}
 
-    return False
+    def evaluate(self) -> str:
+        self.outputs["out"] = self.inputs["a"] or self.inputs["b"]
+        return str(self.outputs)
+
+class AndGate(Chip):
+    def __init__(self, inputs: dict[str, bool]):
+        super().__init__("AND", inputs, chips={})
+        self.outputs = {"out": False}
+
+    def evaluate(self) -> str:
+        self.outputs["out"] = self.inputs["a"] and self.inputs["b"]
+        return str(self.outputs)

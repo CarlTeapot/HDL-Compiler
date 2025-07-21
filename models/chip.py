@@ -1,25 +1,43 @@
+from models.chip_parameters import ChipParameters
+
+
 class Chip:
-    def __init__(self, inputs: list[str], outputs: list[str], parts: dict[str, 'Chip']):
-        self.inputs = {name: False for name in inputs}
-        self.outputs = {name: False for name in outputs}
-        self.parts = parts  # dict: part name -> Chip instance
+    def __init__(self, name: str, inputs: dict[str, bool], chips: dict[str, 'ChipParameters']):
+        self.name = name
+        self.inputs = inputs
+        self.chips = chips
 
-    def set_input(self, name: str, value: bool):
-        if name not in self.inputs:
-            raise KeyError(f"Input '{name}' not found in chip inputs.")
-        self.inputs[name] = value
+        chip_params = chips[name]
+        self.outputs = {name: False for name in chip_params.outputs}
+        self.parts = chip_params.parts
 
-    def get_output(self, name: str) -> bool:
-        if name not in self.outputs:
-            raise KeyError(f"Output '{name}' not found in chip outputs.")
-        return self.outputs[name]
+        self.intermediaryBits: dict[str, bool] = {}
 
-    def __str__(self):
-        parts_str = ', '.join(self.parts.keys())
-        return (
-            f"Chip(\n"
-            f"  Inputs: {self.inputs}\n"
-            f"  Outputs: {self.outputs}\n"
-            f"  Parts: {parts_str}\n"
-            f")"
-        )
+    def reset(self):
+        self.inputs = {name: False for name in self.inputs}
+        self.outputs = {name: False for name in self.outputs}
+        self.intermediaryBits = {}
+
+    def evaluate(self) -> str:
+        for part in self.parts:
+            chip_params = self.chips[part.name]
+
+            sub_inputs = {}
+            for pin in chip_params.inputs:
+                wire = part.connections[pin]
+                if wire in self.inputs:
+                    sub_inputs[pin] = self.inputs[wire]
+                else:
+                    sub_inputs[pin] = self.intermediaryBits.get(wire, False)
+
+            sub_chip = Chip(part.name, sub_inputs, self.chips)
+            sub_chip.evaluate()
+
+            for pin, value in sub_chip.outputs.items():
+                wire = part.connections[pin]
+                if wire in self.outputs:
+                    self.outputs[wire] = value
+                else:
+                    self.intermediaryBits[wire] = value
+
+        return str(self.outputs)
