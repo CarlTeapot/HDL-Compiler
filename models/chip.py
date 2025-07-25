@@ -21,26 +21,47 @@ class Chip:
     def evaluate(self) -> str:
         from models.chip_factory import ChipFactory
 
-        for part in self.parts:
-            chip_params = self.chips[part.name]
+        remaining_parts = self.parts.copy()
+        evaluated_parts = set()
 
-            sub_inputs = {}
-            for pin in chip_params.inputs:
-                wire = part.connections[pin]
-                if wire in self.inputs:
-                    sub_inputs[pin] = self.inputs[wire]
-                else:
-                    sub_inputs[pin] = self.intermediaryBits.get(wire, False)
+        while remaining_parts:
+            progress_made = False
+            for part in remaining_parts[:]:
+                chip_params = self.chips[part.name]
 
-            chip_factory = ChipFactory(part.name, sub_inputs, self.chips)
-            sub_chip = chip_factory.create()
-            sub_chip.evaluate()
+                sub_inputs = {}
+                inputs_ready = True
 
-            for pin, value in sub_chip.outputs.items():
-                wire = part.connections[pin]
-                if wire in self.outputs:
-                    self.outputs[wire] = value
-                else:
-                    self.intermediaryBits[wire] = value
+                for pin in chip_params.inputs:
+                    wire = part.connections[pin]
+                    if wire in self.inputs:
+                        sub_inputs[pin] = self.inputs[wire]
+                    elif wire in self.intermediaryBits:
+                        sub_inputs[pin] = self.intermediaryBits[wire]
+                    else:
+                        inputs_ready = False
+                        break
+
+                if not inputs_ready:
+                    continue
+
+                chip_factory = ChipFactory(part.name, sub_inputs, self.chips)
+                sub_chip = chip_factory.create()
+                sub_chip.evaluate()
+
+                for pin, value in sub_chip.outputs.items():
+                    wire = part.connections[pin]
+                    if wire in self.outputs:
+                        self.outputs[wire] = value
+                    else:
+                        self.intermediaryBits[wire] = value
+
+                remaining_parts.remove(part)
+                progress_made = True
+                evaluated_parts.add(part)
+
+            if not progress_made:
+                raise RuntimeError("Unable to resolve all parts; possible combinational loop or missing wire.")
 
         return str(self.outputs)
+

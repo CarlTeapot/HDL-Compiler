@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "hdl-parser"
+version = "0.1.0"
+description = ""
+authors = ["CarlTeapot <arevadzemate@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.12.4"
+mypy = "^1.17.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

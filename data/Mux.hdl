@@ -11,10 +11,10 @@ CHIP Mux {
     OUT out;
     
     PARTS:
-    Not (in=sel, out=nsel);
-    And (a=a, b=nsel, out=as);
     And (a=b, b=sel, out=bs);
     Or (a=as, b=bs, out=out);
+    Not (in=sel, out=nsel);
+    And (a=a, b=nsel, out=as);
 }
 
 

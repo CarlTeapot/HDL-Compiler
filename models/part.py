@@ -5,3 +5,6 @@ from typing import Dict
 class Part:
     name: str
     connections: Dict[str, str]
+
+    def __hash__(self):
+        return hash((self.name, frozenset(self.connections.items())))
